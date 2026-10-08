@@ -1,0 +1,6 @@
+{
+  "name": "محاكي الشاحنات الأوروبية - Euro Truck Sim & Logistics",
+  "description": "محاكاة واقعية لقيادة الشاحنات الأوروبية ونقل البضائع وتأسيس أسطول النقل الخاص بك",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
