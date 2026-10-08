@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Gauge,
   Fuel,
@@ -15,8 +15,15 @@ import {
   Navigation,
   Key,
   ShieldAlert,
+  ArrowBigUp,
+  ArrowBigDown,
+  ArrowBigLeft,
+  ArrowBigRight,
+  Download,
+  Smartphone,
 } from 'lucide-react';
 import { CameraView, Job, WeatherType } from '../../types/game';
+import { DriveInputState } from '../DriveSimulation/TruckCanvas';
 
 interface DriveHUDProps {
   speedKmH: number;
@@ -38,6 +45,9 @@ interface DriveHUDProps {
   nearGasStation: boolean;
   nearRestStop: boolean;
   recentInfraction: { message: string; fine: number } | null;
+  driveInputs?: DriveInputState;
+  onDriveInput?: (key: keyof DriveInputState, active: boolean) => void;
+  onDownloadProject?: () => void;
   onToggleEngine: () => void;
   onToggleHeadlights: () => void;
   onToggleWipers: () => void;
@@ -73,6 +83,9 @@ export const DriveHUD: React.FC<DriveHUDProps> = ({
   nearGasStation,
   nearRestStop,
   recentInfraction,
+  driveInputs,
+  onDriveInput,
+  onDownloadProject,
   onToggleEngine,
   onToggleHeadlights,
   onToggleWipers,
@@ -87,6 +100,7 @@ export const DriveHUD: React.FC<DriveHUDProps> = ({
   onOpenFleet,
   onOpenGarage,
 }) => {
+  const [showTouchPedals, setShowTouchPedals] = useState(true);
   const fuelPercent = Math.max(0, Math.min(100, (fuelLiters / maxFuelLiters) * 100));
   const isSpeeding = speedKmH > 80;
   const isExhausted = fatiguePercent > 80;
@@ -181,7 +195,7 @@ export const DriveHUD: React.FC<DriveHUDProps> = ({
           </button>
         </div>
 
-        {/* Camera Views & Audio Mute */}
+        {/* Camera Views & Tools */}
         <div className="pointer-events-auto flex items-center gap-1.5 bg-neutral-900/90 backdrop-blur-md border border-neutral-700/60 rounded-xl p-1.5 text-white shadow-xl">
           <button
             onClick={() => {
@@ -197,6 +211,30 @@ export const DriveHUD: React.FC<DriveHUDProps> = ({
               {cameraView === 'chase' ? 'خارجي' : cameraView === 'cockpit' ? 'الكابينة' : cameraView === 'hood' ? 'مقدمة' : 'علوي'}
             </span>
           </button>
+
+          {/* Toggle Touch Pedals */}
+          <button
+            onClick={() => setShowTouchPedals((v) => !v)}
+            className={`p-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+              showTouchPedals ? 'bg-amber-500/20 text-amber-400' : 'bg-neutral-800 text-neutral-400 hover:text-white'
+            }`}
+            title="إظهار / إخفاء أزرار القيادة على الشاشة"
+          >
+            <Smartphone className="w-4 h-4" />
+          </button>
+
+          {/* Download Project Zip */}
+          {onDownloadProject && (
+            <button
+              onClick={onDownloadProject}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white transition-colors cursor-pointer font-bold"
+              title="تحميل كود المشروع كاملاً (ZIP)"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>تحميل ZIP</span>
+            </button>
+          )}
+
           <button
             onClick={onToggleMute}
             className={`p-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
@@ -268,6 +306,82 @@ export const DriveHUD: React.FC<DriveHUDProps> = ({
           </div>
         )}
       </div>
+
+      {/* On-Screen Touch Steering & Driving Pedals */}
+      {showTouchPedals && onDriveInput && (
+        <div className="pointer-events-auto w-full flex items-center justify-between px-2 select-none">
+          {/* Steering Left & Right */}
+          <div className="flex items-center gap-2.5">
+            <button
+              onPointerDown={() => onDriveInput('steerRight', true)}
+              onPointerUp={() => onDriveInput('steerRight', false)}
+              onPointerLeave={() => onDriveInput('steerRight', false)}
+              className={`w-14 h-14 rounded-2xl border flex flex-col items-center justify-center font-bold text-white shadow-xl transition-transform active:scale-95 touch-none cursor-pointer ${
+                driveInputs?.steerRight ? 'bg-amber-500 border-amber-400 text-neutral-950 scale-95' : 'bg-neutral-900/90 border-neutral-700/80 hover:bg-neutral-800'
+              }`}
+              title="انعطاف يمين"
+            >
+              <ArrowBigRight className="w-7 h-7" />
+              <span className="text-[9px]">يمين</span>
+            </button>
+
+            <button
+              onPointerDown={() => onDriveInput('steerLeft', true)}
+              onPointerUp={() => onDriveInput('steerLeft', false)}
+              onPointerLeave={() => onDriveInput('steerLeft', false)}
+              className={`w-14 h-14 rounded-2xl border flex flex-col items-center justify-center font-bold text-white shadow-xl transition-transform active:scale-95 touch-none cursor-pointer ${
+                driveInputs?.steerLeft ? 'bg-amber-500 border-amber-400 text-neutral-950 scale-95' : 'bg-neutral-900/90 border-neutral-700/80 hover:bg-neutral-800'
+              }`}
+              title="انعطاف يسار"
+            >
+              <ArrowBigLeft className="w-7 h-7" />
+              <span className="text-[9px]">يسار</span>
+            </button>
+          </div>
+
+          {/* Gas Pedal, Brake, Handbrake */}
+          <div className="flex items-center gap-2.5">
+            <button
+              onPointerDown={() => onDriveInput('handbrake', true)}
+              onPointerUp={() => onDriveInput('handbrake', false)}
+              onPointerLeave={() => onDriveInput('handbrake', false)}
+              className={`w-12 h-12 rounded-xl border flex flex-col items-center justify-center font-bold shadow-xl transition-transform active:scale-95 touch-none cursor-pointer ${
+                driveInputs?.handbrake ? 'bg-amber-600 border-amber-400 text-white' : 'bg-neutral-900/90 border-neutral-700 text-amber-400 hover:bg-neutral-800'
+              }`}
+              title="فرملة هوائية / يد"
+            >
+              <span className="font-mono text-sm font-black">🅿️</span>
+              <span className="text-[8px]">هوائية</span>
+            </button>
+
+            <button
+              onPointerDown={() => onDriveInput('brake', true)}
+              onPointerUp={() => onDriveInput('brake', false)}
+              onPointerLeave={() => onDriveInput('brake', false)}
+              className={`w-14 h-16 rounded-2xl border flex flex-col items-center justify-center font-bold shadow-xl transition-transform active:scale-95 touch-none cursor-pointer ${
+                driveInputs?.brake ? 'bg-rose-600 border-rose-400 text-white scale-95' : 'bg-rose-950/80 border-rose-800 text-rose-300 hover:bg-rose-900'
+              }`}
+              title="فرامل / رجوع للخلف"
+            >
+              <ArrowBigDown className="w-6 h-6" />
+              <span className="text-[9px]">فرامل / R</span>
+            </button>
+
+            <button
+              onPointerDown={() => onDriveInput('throttle', true)}
+              onPointerUp={() => onDriveInput('throttle', false)}
+              onPointerLeave={() => onDriveInput('throttle', false)}
+              className={`w-16 h-20 rounded-2xl border flex flex-col items-center justify-center font-bold shadow-2xl transition-transform active:scale-95 touch-none cursor-pointer ${
+                driveInputs?.throttle ? 'bg-emerald-500 border-emerald-400 text-neutral-950 scale-95' : 'bg-emerald-900/80 border-emerald-700 text-emerald-300 hover:bg-emerald-800'
+              }`}
+              title="دواسة الوقود والتسارع"
+            >
+              <ArrowBigUp className="w-8 h-8" />
+              <span className="text-[10px] font-black">تسارع V8</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Main Cockpit HUD Cluster */}
       <div className="flex flex-col md:flex-row items-end justify-between gap-4">

@@ -77,6 +77,28 @@ export default function App() {
   const [nearRestStop, setNearRestStop] = useState(false);
   const [recentInfraction, setRecentInfraction] = useState<{ message: string; fine: number } | null>(null);
 
+  // On-screen touch & button drive inputs
+  const [driveInputs, setDriveInputs] = useState({
+    throttle: false,
+    brake: false,
+    steerLeft: false,
+    steerRight: false,
+    handbrake: false,
+  });
+
+  const handleDriveInput = useCallback((key: keyof typeof driveInputs, active: boolean) => {
+    setDriveInputs((prev) => ({ ...prev, [key]: active }));
+  }, []);
+
+  const handleDownloadProject = useCallback(() => {
+    const link = document.createElement('a');
+    link.href = '/euro-truck-simulator-src.zip';
+    link.download = 'euro-truck-simulator-src.zip';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
+
   // Modals
   const [isJobsOpen, setIsJobsOpen] = useState(false);
   const [isFleetOpen, setIsFleetOpen] = useState(false);
@@ -390,6 +412,7 @@ export default function App() {
           isWipersActive={isWipersActive}
           isHeadlightsActive={isHeadlightsActive}
           isMuted={isMuted}
+          driveInputs={driveInputs}
           onSpeedUpdate={(spd, engineRpm, g) => {
             setSpeedKmH(spd);
             setRpm(engineRpm);
@@ -425,6 +448,9 @@ export default function App() {
           nearGasStation={nearGasStation}
           nearRestStop={nearRestStop}
           recentInfraction={recentInfraction}
+          driveInputs={driveInputs}
+          onDriveInput={handleDriveInput}
+          onDownloadProject={handleDownloadProject}
           onToggleEngine={() => setIsEngineStarted((v) => !v)}
           onToggleHeadlights={() => setIsHeadlightsActive((v) => !v)}
           onToggleWipers={() => setIsWipersActive((v) => !v)}

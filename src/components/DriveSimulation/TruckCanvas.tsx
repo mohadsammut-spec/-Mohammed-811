@@ -3,6 +3,14 @@ import * as THREE from 'three';
 import { CameraView, TruckConfig, WeatherType } from '../../types/game';
 import { truckAudio } from '../../services/sound';
 
+export interface DriveInputState {
+  throttle: boolean;
+  brake: boolean;
+  steerLeft: boolean;
+  steerRight: boolean;
+  handbrake: boolean;
+}
+
 interface TruckCanvasProps {
   truckConfig: TruckConfig;
   cargoWeightTons: number;
@@ -13,6 +21,7 @@ interface TruckCanvasProps {
   isWipersActive: boolean;
   isHeadlightsActive: boolean;
   isMuted: boolean;
+  driveInputs?: DriveInputState;
   onSpeedUpdate: (speedKmH: number, rpm: number, gear: number | string) => void;
   onInfraction: (type: 'speeding' | 'collision', fineAmount: number) => void;
   onFuelConsume: (litersUsed: number) => void;
@@ -33,6 +42,7 @@ export const TruckCanvas: React.FC<TruckCanvasProps> = ({
   isWipersActive,
   isHeadlightsActive,
   isMuted,
+  driveInputs,
   onSpeedUpdate,
   onInfraction,
   onFuelConsume,
@@ -73,6 +83,7 @@ export const TruckCanvas: React.FC<TruckCanvasProps> = ({
     isWipersActive,
     isHeadlightsActive,
     isMuted,
+    driveInputs,
   });
 
   useEffect(() => {
@@ -86,9 +97,10 @@ export const TruckCanvas: React.FC<TruckCanvasProps> = ({
       isWipersActive,
       isHeadlightsActive,
       isMuted,
+      driveInputs,
     };
     truckAudio.setMuted(isMuted);
-  }, [truckConfig, cargoWeightTons, trailerType, weather, cameraView, isEngineStarted, isWipersActive, isHeadlightsActive, isMuted]);
+  }, [truckConfig, cargoWeightTons, trailerType, weather, cameraView, isEngineStarted, isWipersActive, isHeadlightsActive, isMuted, driveInputs]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -781,12 +793,12 @@ export const TruckCanvas: React.FC<TruckCanvasProps> = ({
         wiperR.rotation.z = wiperAngle;
       }
 
-      // Driving input & physics
-      const isThrottle = (keys['w'] || keys['arrowup']) && p.isEngineStarted;
-      const isBraking = keys['s'] || keys['arrowdown'];
-      const isHandbrake = keys[' '] || keys['space'];
-      const isSteerLeft = keys['a'] || keys['arrowleft'];
-      const isSteerRight = keys['d'] || keys['arrowright'];
+      // Driving input & physics (keyboard + touch/on-screen controls)
+      const isThrottle = ((keys['w'] || keys['arrowup']) || Boolean(p.driveInputs?.throttle)) && p.isEngineStarted;
+      const isBraking = keys['s'] || keys['arrowdown'] || Boolean(p.driveInputs?.brake);
+      const isHandbrake = keys[' '] || keys['space'] || Boolean(p.driveInputs?.handbrake);
+      const isSteerLeft = keys['a'] || keys['arrowleft'] || Boolean(p.driveInputs?.steerLeft);
+      const isSteerRight = keys['d'] || keys['arrowright'] || Boolean(p.driveInputs?.steerRight);
 
       // Engine acceleration calculation influenced by HP and Cargo weight
       // Heavier cargo = slower acceleration
